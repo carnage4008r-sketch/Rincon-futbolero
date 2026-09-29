@@ -21,7 +21,7 @@ jobs:
           cp Rifut.html assets/Rifut.html
           cp logo_fixed.png assets/logo.png
           cat > pubspec.yaml <<'EOF'
-          name: Rincón Futbolero 
+          name: rincon_futbolero
           description: Rincon Futbolero PRO
           version: 2.1.0+1
           environment: {sdk: '>=3.0.0 <4.0.0'}
