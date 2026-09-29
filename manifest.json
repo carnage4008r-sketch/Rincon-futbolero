@@ -1,13 +1,21 @@
 {
-  "name": "Rincón Futbolero - Liga Chinantla",
+  "name": "Rincón Futbolero",
   "short_name": "Rincón Futbolero",
+  "description": "Liga Veteranos Chinantla",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#080d08",
   "theme_color": "#0a5c2e",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icon-1024.png", "sizes": "1024x1024", "type": "image/png" }
+    {
+      "src": "rincon_logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "rincon_logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }
