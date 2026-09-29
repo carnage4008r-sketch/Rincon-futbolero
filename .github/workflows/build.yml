@@ -11,25 +11,28 @@ jobs:
         with: {distribution: 'temurin', java-version: '17'}
       - uses: subosito/flutter-action@v2
         with: {flutter-version: '3.27.3', channel: stable}
-      - name: Build APK ICONO OK + WEB OK
+      - name: Build APK ICONO + FIX GRADLE
         run: |
           rm -rf android ios lib
           flutter create . --platforms=android --project-name rincon_futbolero
+          # PARCHE: subir Gradle plugin de 8.1.0 a 8.3.0
+          sed -i "s/8.1.0/8.3.0/g" android/settings.gradle
+          sed -i "s/8.1.0/8.3.0/g" android/build.gradle 2>/dev/null || true
           pip install pillow -q
           python3 << 'PY'
           from PIL import Image
           import os
           im = Image.open('logo.png').convert('RGBA')
-          # fondo verde para que no se vea feo como icono
-          bg = Image.new('RGBA', im.size, (10,92,54,255))
-          # pega logo centrado
-          bg.paste(im, (0,0), im)
+          bg = Image.new('RGBA', (1024,1024), (10,92,54,255))
+          w,h = im.size
+          scale = min(900/w, 900/h)
+          im2 = im.resize((int(w*scale), int(h*scale)), Image.LANCZOS)
+          bg.paste(im2, ((1024-im2.width)//2, (1024-im2.height)//2), im2)
           bg.save('logo_fixed.png','PNG')
           for size, folder in [(48,'mipmap-mdpi'),(72,'mipmap-hdpi'),(96,'mipmap-xhdpi'),(144,'mipmap-xxhdpi'),(192,'mipmap-xxxhdpi')]:
               path = f'android/app/src/main/res/{folder}'
               os.makedirs(path, exist_ok=True)
-              Image.open('logo_fixed.png').resize((size,size), Image.LANCZOS).save(f'{path}/ic_launcher.png','PNG')
-              Image.open('logo_fixed.png').resize((size,size), Image.LANCZOS).save(f'{path}/ic_launcher_foreground.png','PNG')
+              bg.resize((size,size), Image.LANCZOS).save(f'{path}/ic_launcher.png','PNG')
           PY
           mkdir -p assets
           cp Rifut.html assets/Rifut.html
@@ -37,12 +40,11 @@ jobs:
           cat > pubspec.yaml <<'EOF'
           name: rincon_futbolero
           description: Rincon Futbolero PRO
-          version: 5.1.0+1
+          version: 5.2.0+1
           environment: {sdk: '>=3.2.0 <4.0.0'}
           dependencies:
             flutter: {sdk: flutter}
             webview_flutter: ^4.4.4
-            file_picker: ^8.1.2
           flutter: {uses-material-design: true, assets: [assets/Rifut.html, assets/logo.png]}
           EOF
           cat > lib/main.dart <<'EOF'
@@ -80,5 +82,5 @@ jobs:
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
-          name: Rincon-Futbolero-ICONO-FINAL
+          name: Rincon-Futbolero-ICONO-OK
           path: build/app/outputs/flutter-apk/app-release.apk
