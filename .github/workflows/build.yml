@@ -11,7 +11,7 @@ jobs:
         with: {distribution: 'temurin', java-version: '17'}
       - uses: subosito/flutter-action@v2
         with: {flutter-version: '3.27.3', channel: stable}
-      - name: Build FIX DEFINITIVO VERDE
+      - name: Build FIX VERDE REAL
         run: |
           rm -rf android ios lib
           flutter create . --platforms=android --project-name rincon_futbolero
@@ -26,7 +26,6 @@ jobs:
           w,h=im.size; s=min(900/w,900/h)
           im2=im.resize((int(w*s),int(h*s)), Image.LANCZOS)
           bg.paste(im2,((1024-im2.width)//2,(1024-im2.height)//2),im2)
-          bg.save('logo_fixed.png','PNG')
           for size,folder in [(48,'mipmap-mdpi'),(72,'mipmap-hdpi'),(96,'mipmap-xhdpi'),(144,'mipmap-xxhdpi'),(192,'mipmap-xxxhdpi')]:
             p=f'android/app/src/main/res/{folder}'; os.makedirs(p,exist_ok=True)
             bg.resize((size,size), Image.LANCZOS).save(f'{p}/ic_launcher.png','PNG')
@@ -37,7 +36,7 @@ jobs:
           cat > pubspec.yaml <<'EOF'
           name: rincon_futbolero
           description: Rincon Futbolero PRO
-          version: 8.0.0+1
+          version: 9.0.0+1
           environment: {sdk: '>=3.2.0 <4.0.0'}
           dependencies:
             flutter: {sdk: flutter}
@@ -46,32 +45,22 @@ jobs:
           EOF
           cat > lib/main.dart <<'EOF'
           import 'package:flutter/material.dart';
+          import 'package:flutter/services.dart';
           import 'package:flutter_inappwebview/flutter_inappwebview.dart';
           void main() async { WidgetsFlutterBinding.ensureInitialized(); runApp(const MyApp()); }
           class MyApp extends StatelessWidget{const MyApp({super.key}); @override Widget build(BuildContext c)=>const MaterialApp(debugShowCheckedModeBanner:false, home:ProApp());}
           class ProApp extends StatefulWidget{const ProApp({super.key}); @override State<ProApp> createState()=>_ProAppState();}
           class _ProAppState extends State<ProApp>{
-            InAppWebViewController? webViewController;
+            String? htmlData;
+            @override void initState(){super.initState(); rootBundle.loadString('assets/Rifut.html').then((v){ setState(()=> htmlData=v); });}
             @override Widget build(BuildContext context){
+              if(htmlData==null) return const Scaffold(backgroundColor: Color(0xFF0A5C36), body: Center(child: CircularProgressIndicator(color: Colors.white)));
               return Scaffold(
                 backgroundColor: const Color(0xFF0A5C36),
                 appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white),
                 body: InAppWebView(
-                  onWebViewCreated: (controller) { webViewController = controller; },
-                  onLoadStart: (controller, url) async {
-                    if (url == null || url.toString() == "about:blank") {
-                      await controller.loadFile(assetFilePath: "assets/Rifut.html");
-                    }
-                  },
-                  initialSettings: InAppWebViewSettings(
-                    javaScriptEnabled: true,
-                    domStorageEnabled: true,
-                    allowFileAccess: true,
-                    allowContentAccess: true,
-                    allowFileAccessFromFileURLs: true,
-                    allowUniversalAccessFromFileURLs: true,
-                    useHybridComposition: true,
-                  ),
+                  initialData: InAppWebViewInitialData(data: htmlData!, baseUrl: WebUri("https://localhost/"), mimeType: "text/html", encoding: "utf-8"),
+                  initialSettings: InAppWebViewSettings(javaScriptEnabled: true, domStorageEnabled: true, allowFileAccess: true, javaScriptCanOpenWindowsAutomatically: true, useHybridComposition: true),
                 ),
               );
             }
@@ -81,5 +70,5 @@ jobs:
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
-          name: APK-FIX-VERDE-DEFINITIVO
+          name: APK-FIX-VERDE-REAL
           path: build/app/outputs/flutter-apk/app-release.apk
