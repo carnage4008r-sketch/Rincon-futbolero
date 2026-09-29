@@ -11,12 +11,62 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.27.3'
-          channel: stable
-      - name: crear proyecto
-        run: flutter create . --platforms=android --project-name rincon_futbolero --overwrite
-      - name: crear main.dart
+      - uses: gradle/actions/setup-gradle@v3
+      - name: Crear proyecto nativo
         run: |
-          echo 'CmltcG9ydCAncGFja2FnZTpmbHV0dGVyL21hdGVyaWFsLmRhcnQnOwppbXBvcnQgJ3BhY2thZ2U6Zmx1dHRlcl9pbmFwcHdlYnZpZXcvZmx1dHRlcl9pbmFwcHdlYnZpZXcuZGFydCc7CnZvaWQgbWFpbigpe1dpZGdldHNGbHV0dGVyQmluZGluZy5lbnN1cmVJbml0aWFsaXplZCgpO3J1bkFwcChjb25zdCBNYXRlcmlhbEFwcChkZWJ1Z1Nob3dDaGVja2VkTW9kZUJhbm5lcjpmYWxzZSxob21lOkFwcCgpKSk7fQpjbGFzcyBBcHAgZXh0ZW5kcyBTdGF0ZWZ1bFdpZGdldHtjb25zdCBBcHAoe3N1cGVyLmtleX0pO0BvdmVycmlkZSBTdGF0ZTxBcHA+IGNyZWF0ZVN0YXRlKCk9Pl9TKCk7fQpjbGFzcyBfUyBleHRlbmRzIFN0YXRlPEFwcD57CiAgZmluYWwgU3RyaW5nIGh0bWwgPSByJycnCjwhRE9DVFlQRSBodG1sPgo8aHRtbD48aGVhZD48bWV0YSBjaGFyc2V0PSJ1dGYtOCI+PG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCxpbml0aWFsLXNjYWxlPTEiPgo8c3R5bGU+CmJvZHl7bWFyZ2luOjA7YmFja2dyb3VuZDojMDgwZDA4O2NvbG9yOndoaXRlO2ZvbnQtZmFtaWx5OkFyaWFsO3BhZGRpbmctYm90dG9tOjgwcHh9CmhlYWRlcntiYWNrZ3JvdW5kOiMwZjFhMGY7Ym9yZGVyLWJvdHRvbTozcHggc29saWQgI2ZmNmIyYjtwYWRkaW5nOjE0cHg7ZGlzcGxheTpmbGV4O2dhcDoxMnB4O2FsaWduLWl0ZW1zOmNlbnRlcjtwb3NpdGlvbjpzdGlja3k7dG9wOjB9CmhlYWRlciBpbWd7d2lkdGg6NTZweDtoZWlnaHQ6NTZweDtib3JkZXItcmFkaXVzOjUwJTtiYWNrZ3JvdW5kOndoaXRlfQouY2FyZHttYXJnaW46MTJweDtiYWNrZ3JvdW5kOiMxMjFhMTI7Ym9yZGVyLXJhZGl1czoxOHB4O3BhZGRpbmc6MTRweDtib3JkZXI6MXB4IHNvbGlkICMxZTMzMWV9CmlucHV0LHNlbGVjdHt3aWR0aDoxMDAlO3BhZGRpbmc6MTJweDtib3JkZXItcmFkaXVzOjEycHg7Ym9yZGVyOjFweCBzb2xpZCAjMmE0YTJhO2JhY2tncm91bmQ6IzBhMTIwYTtjb2xvcjp3aGl0ZTttYXJnaW46NnB4IDB9Ci5idG57d2lkdGg6MTAwJTtwYWRkaW5nOjE0cHg7Ym9yZGVyLXJhZGl1czoxMnB4O2JvcmRlcjpub25lO2ZvbnQtd2VpZ2h0OjkwMDtiYWNrZ3JvdW5kOmxpbmVhci1ncmFkaWVudCgxMzVkZWcsI2ZmNmIyYiwjZmY4YTRhKTtjb2xvcjojMTExO21hcmdpbi10b3A6OHB4fQoucm93e2Rpc3BsYXk6ZmxleDtqdXN0aWZ5LWNvbnRlbnQ6c3BhY2UtYmV0d2VlbjtiYWNrZ3JvdW5kOiMxYTI2MWE7Ym9yZGVyOjFweCBzb2xpZCAjMGE1YzJlO3BhZGRpbmc6MTBweDtib3JkZXItcmFkaXVzOjEycHg7bWFyZ2luOjZweCAwfQp0YWJsZXt3aWR0aDoxMDAlO2JvcmRlci1jb2xsYXBzZTpjb2xsYXBzZX10aHtjb2xvcjojZmY2YjJiO3BhZGRpbmc6OHB4fXRke3BhZGRpbmc6OHB4O2JvcmRlci1ib3R0b206MXB4IHNvbGlkICMyMjI7dGV4dC1hbGlnbjpjZW50ZXJ9Ci5nb2x7d2lkdGg6NTJweDtjb2xvcjojZmY2YjJiO2ZvbnQtd2VpZ2h0OjkwMDtib3JkZXItY29sb3I6I2ZmNmIyYjtiYWNrZ3JvdW5kOiMxYTEyMGE7dGV4dC1hbGlnbjpjZW50ZXI7Zm9udC1zaXplOjE3cHh9Ci5qe21hcmdpbjoxMnB4IDAgNnB4O2JhY2tncm91bmQ6bGluZWFyLWdyYWRpZW50KDkwZGVnLCNmZjZiMmIsI2ZmOGE0YSk7Y29sb3I6IzExMTtwYWRkaW5nOjZweCAxMHB4O2JvcmRlci1yYWRpdXM6OHB4O2ZvbnQtd2VpZ2h0OjkwMDtmb250LXNpemU6MTJweH0KPC9zdHlsZT48L2hlYWQ+Cjxib2R5Pgo8aGVhZGVyPjxpbWcgc3JjPSJsb2dvLnBuZyIgb25lcnJvcj0idGhpcy5zdHlsZS5kaXNwbGF5PSdub25lJyI+PGIgc3R5bGU9ImNvbG9yOiNmZjZiMmIiPlJJTkNPTiBGVVRCT0xFUk8gLSBMSUdBIENISU5BTlRMQTwvYj48L2hlYWRlcj4KPGRpdiBjbGFzcz0iY2FyZCI+PGgzIHN0eWxlPSJjb2xvcjojZmY2YjJiIj5FUVVJUE9TPC9oMz48aW5wdXQgaWQ9Im5uIiBwbGFjZWhvbGRlcj0iTm9tYnJlIGVxdWlwbyI+PGJ1dHRvbiBjbGFzcz0iYnRuIiBvbmNsaWNrPSJhZGRFcSgpIj4rIEFHUkVHQVIgRVFVSVBPPC9idXR0b24+PGRpdiBpZD0ibGUiPjwvZGl2PjxociBzdHlsZT0iYm9yZGVyLWNvbG9yOiMyMjIiPjxoMyBzdHlsZT0iY29sb3I6I2ZmNmIyYiI+RklYVFVSRTwvaDM+PHNlbGVjdCBpZD0ic2oiPjwvc2VsZWN0PjxzZWxlY3QgaWQ9ImxvIj48L3NlbGVjdD48c2VsZWN0IGlkPSJ2aSI+PC9zZWxlY3Q+PGlucHV0IGlkPSJmZSIgdHlwZT0iZGF0ZSI+PGJ1dHRvbiBjbGFzcz0iYnRuIiBvbmNsaWNrPSJhZGRGKCkiIHN0eWxlPSJiYWNrZ3JvdW5kOiMwYTVjMmU7Y29sb3I6d2hpdGUiPisgUEFSVElETzwvYnV0dG9uPjxkaXYgaWQ9ImxmIj48L2Rpdj48YnV0dG9uIGNsYXNzPSJidG4iIG9uY2xpY2s9Imd1YXJkYXIoKSI+R1VBUkRBUiBZIEpVR0FSPC9idXR0b24+PC9kaXY+CjxkaXYgaWQ9ImFwcCIgc3R5bGU9ImRpc3BsYXk6bm9uZSI+PGRpdiBjbGFzcz0iY2FyZCI+PGRpdiBpZD0icm9sIj48L2Rpdj48YnV0dG9uIGNsYXNzPSJidG4iIG9uY2xpY2s9ImNhbGMoKSI+Q0FMQ1VMQVIgVEFCTEE8L2J1dHRvbj48YnV0dG9uIGNsYXNzPSJidG4iIG9uY2xpY2s9ImxvY2F0aW9uLnJlbG9hZCgpIiBzdHlsZT0iYmFja2dyb3VuZDp0cmFuc3BhcmVudDtib3JkZXI6MnB4IHNvbGlkICMwZTdhM2U7Y29sb3I6IzBlN2EzZSI+RURJVEFSIExJR0E8L2J1dHRvbj48L2Rpdj48ZGl2IGNsYXNzPSJjYXJkIj48aDMgc3R5bGU9ImNvbG9yOiNmZjZiMmIiPlRBQkxBIEdFTkVSQUw8L2gzPjx0YWJsZSBpZD0idGciPjwvdGFibGU+PC9kaXY+PC9kaXY+CjxzY3JpcHQ+CmxldCAkPWk9PmRvY3VtZW50LmdldEVsZW1lbnRCeUlkKGkpOyBsZXQgZXE9SlNPTi5wYXJzZShsb2NhbFN0b3JhZ2UuZ2V0SXRlbSgnZXEnKXx8J1tdJyk7IGxldCBmeD1KU09OLnBhcnNlKGxvY2FsU3RvcmFnZS5nZXRJdGVtKCdmeCcpfHwnW10nKTsgbGV0IHJzPUpTT04ucGFyc2UobG9jYWxTdG9yYWdlLmdldEl0ZW0oJ3JzJyl8fCd7fScpOwpmdW5jdGlvbiByZWYoKXtsZXQgbz1lcS5tYXAodj0+YDxvcHRpb24+JHt2fTwvb3B0aW9uPmApLmpvaW4oJycpOyQoJ2xvJykuaW5uZXJIVE1MPW87JCgndmknKS5pbm5lckhUTUw9bztsZXQgcz0nJztmb3IobGV0IGk9MTtpPD0zMDtpKyspcys9YDxvcHRpb24gdmFsdWU9IiR7aX0iPkpvcm5hZGEgJHtpfTwvb3B0aW9uPmA7JCgnc2onKS5pbm5lckhUTUw9czskKCdsZScpLmlubmVySFRNTD1lcS5tYXAoKG4saSk9PmA8ZGl2IGNsYXNzPSJyb3ciPjxiPiR7bn08L2I+PGJ1dHRvbiBvbmNsaWNrPSJlcS5zcGxpY2UoJHtpfSwxKTtsb2NhbFN0b3JhZ2Uuc2V0SXRlbSgnZXEnLEpTT04uc3RyaW5naWZ5KGVxKSk7cmVmKCkiIHN0eWxlPSJ3aWR0aDphdXRvO3BhZGRpbmc6NHB4IDEwcHg7YmFja2dyb3VuZDojMmExMTExO2NvbG9yOiNmZjZiNmI7Ym9yZGVyLXJhZGl1czo4cHgiPlg8L2J1dHRvbj48L2Rpdj5gKS5qb2luKCcnKXx8JzxzbWFsbCBzdHlsZT0iY29sb3I6IzY2NiI+U2luIGVxdWlwb3M8L3NtYWxsPic7cmVuZGVyRigpfQpmdW5jdGlvbiBhZGRFcSgpe2xldCB2PSQoJ25uJykudmFsdWUudHJpbSgpLnRvVXBwZXJDYXNlKCk7aWYoIXYpcmV0dXJuO2lmKGVxLmluY2x1ZGVzKHYpKXthbGVydCgnWWEgZXhpc3RlJyk7cmV0dXJufWlmKGVxLmxlbmd0aD49MTYpe2FsZXJ0KCdNYXggMTYnKTtyZXR1cm59ZXEucHVzaCh2KTtsb2NhbFN0b3JhZ2Uuc2V0SXRlbSgnZXEnLEpTT04uc3RyaW5naWZ5KGVxKSk7JCgnbm4nKS52YWx1ZT0nJztyZWYoKX0KZnVuY3Rpb24gYWRkRigpe2xldCBqPXBhcnNlSW50KCQoJ3NqJykudmFsdWUpO2xldCBsPSQoJ2xvJykudmFsdWU7bGV0IHY9JCgndmknKS52YWx1ZTtsZXQgZj0kKCdmZScpLnZhbHVlfHxuZXcgRGF0ZSgpLnRvSVNPU3RyaW5nKCkuc3BsaXQoJ1QnKVswXTtpZihsPT12KXthbGVydCgnRGlmZXJlbnRlcycpO3JldHVybn1meC5wdXNoKHtqLGwsdixmfSk7bG9jYWxTdG9yYWdlLnNldEl0ZW0oJ2Z4JyxKU09OLnN0cmluZ2lmeShmeCkpO3JlbmRlckYoKX0KZnVuY3Rpb24gcmVuZGVyRigpeyQoJ2xmJykuaW5uZXJIVE1MPWZ4Lm1hcCgoeCxpKT0+YDxkaXYgY2xhc3M9InJvdyI+PHNwYW4+SiR7eC5qfSAke3gubH0gdnMgJHt4LnZ9PC9zcGFuPjxidXR0b24gb25jbGljaz0iZnguc3BsaWNlKCR7aX0sMSk7bG9jYWxTdG9yYWdlLnNldEl0ZW0oJ2Z4JyxKU09OLnN0cmluZ2lmeShmeCkpO3JlbmRlckYoKSIgc3R5bGU9IndpZHRoOmF1dG8iPlg8
+          mkdir -p app/src/main/assets
+          mkdir -p app/src/main/java/com/rincon/futbolero
+          mkdir -p gradle/wrapper
+          echo "include ':app'" > settings.gradle
+          echo "plugins { id 'com.android.application' version '8.3.0' apply false }" > build.gradle
+          echo "distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-all.zip
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists" > gradle/wrapper/gradle-wrapper.properties
+
+          cat > app/build.gradle <<'EOF'
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'com.rincon.futbolero'
+              compileSdk 34
+              defaultConfig { applicationId "com.rincon.futbolero"; minSdk 21; targetSdk 34; versionCode 1; versionName "1.0" }
+          }
+          EOF
+
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rincon.futbolero">
+              <application android:allowBackup="true" android:label="Rincon Futbolero" android:theme="@android:style/Theme.NoTitleBar">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+          cat > app/src/main/java/com/rincon/futbolero/MainActivity.java <<'EOF'
+          package com.rincon.futbolero;
+          import android.os.Bundle; import android.webkit.WebSettings; import android.webkit.WebView; import android.webkit.WebViewClient; import androidx.appcompat.app.AppCompatActivity;
+          public class MainActivity extends AppCompatActivity {
+              WebView web;
+              @Override protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  web = new WebView(this); setContentView(web);
+                  WebSettings s = web.getSettings(); s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); s.setAllowFileAccess(true);
+                  web.setWebViewClient(new WebViewClient()); web.loadUrl("file:///android_asset/Rifut.html");
+              }
+              @Override public void onBackPressed() { if (web.canGoBack()) web.goBack(); else super.onBackPressed(); }
+          }
+          EOF
+
+          cp Rifut.html app/src/main/assets/Rifut.html || cp assets/Rifut.html app/src/main/assets/Rifut.html
+          cp logo.png app/src/main/assets/logo.png || true
+
+      - name: Build APK
+        run: gradle :app:assembleDebug
+      - name: subir apk
+        uses: actions/upload-artifact@v4
+        with:
+          name: APK-RINCON-NATIVO
+          path: app/build/outputs/apk/debug/app-debug.apk
