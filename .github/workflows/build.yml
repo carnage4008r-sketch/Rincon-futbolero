@@ -20,10 +20,8 @@ jobs:
           mkdir -p assets
           cp Rifut.html assets/Rifut.html
           cp logo_fixed.png assets/logo.png
-          # Permisos para galeria
-          sed -i '/<application/a \    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />' android/app/src/main/AndroidManifest.xml || true
           cat > pubspec.yaml <<'EOF'
-          name: rincon_futbolero
+          name: Rincón Futbolero 
           description: Rincon Futbolero PRO
           version: 2.1.0+1
           environment: {sdk: '>=3.0.0 <4.0.0'}
@@ -32,7 +30,6 @@ jobs:
           EOF
           cat > lib/main.dart <<'EOF'
           import 'dart:convert';
-          import 'dart:io';
           import 'package:flutter/material.dart';
           import 'package:flutter/services.dart';
           import 'package:webview_flutter/webview_flutter.dart';
@@ -42,32 +39,19 @@ jobs:
           class _ProAppState extends State<ProApp>{
             late final WebViewController ctrl;
             bool loading=true;
-            @override void initState(){
-              super.initState();
-              _init();
-            }
+            @override void initState(){super.initState(); _init();}
             Future<void> _init() async {
               String html = await rootBundle.loadString('assets/Rifut.html');
               List<int> logoBytes = (await rootBundle.load('assets/logo.png')).buffer.asUint8List();
               String base64Logo = base64Encode(logoBytes);
-              // Reemplaza cualquier referencia a logo.png por base64
-              html = html.replaceAll('src="logo.png"', 'src="data:image/png;base64,$base64Logo"');
-              html = html.replaceAll("src='logo.png'", "src='data:image/png;base64,$base64Logo'");
-              html = html.replaceAll('src="./logo.png"', 'src="data:image/png;base64,$base64Logo"');
               html = html.replaceAll('logo.png', 'data:image/png;base64,$base64Logo');
-              
               ctrl = WebViewController()
                 ..setJavaScriptMode(JavaScriptMode.unrestricted)
                 ..setBackgroundColor(const Color(0xFF0A5C36))
-                ..enableZoom(false)
-                ..setNavigationDelegate(NavigationDelegate(onPageFinished: (_){setState(()=>loading=false);} ))
                 ..loadHtmlString(html, baseUrl: 'https://localhost/');
               setState(()=>loading=false);
             }
-            @override Widget build(BuildContext b)=>Scaffold(
-              backgroundColor: const Color(0xFF0A5C36),
-              appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white),
-              body: loading ? const Center(child: CircularProgressIndicator(color: Colors.white)) : WebViewWidget(controller: ctrl));
+            @override Widget build(BuildContext b)=>Scaffold(backgroundColor: const Color(0xFF0A5C36), appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white), body: loading ? const Center(child: CircularProgressIndicator(color: Colors.white)) : WebViewWidget(controller: ctrl));
           }
           EOF
       - run: flutter pub get
