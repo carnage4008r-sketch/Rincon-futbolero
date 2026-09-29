@@ -1,4 +1,4 @@
-name: Build APK PRO
+name: build
 on:
   push:
     branches: [ main ]
@@ -15,10 +15,16 @@ jobs:
         with:
           flutter-version: '3.22.0'
           channel: stable
+
       - name: Preparar proyecto
         run: |
+          rm -rf android ios
+          flutter create . --platforms=android --project-name rincon_futbolero
           mkdir -p assets
-          cp "Rifut .html" assets/Rifut.html 2>/dev/null || cp Rifut.html assets/Rifut.html 2>/dev/null || cp index.html assets/Rifut.html 2>/dev/null || echo "no html"
+          if [ -f "Rifut .html" ]; then cp "Rifut .html" assets/Rifut.html; fi
+          if [ -f "Rifut.html" ]; then cp Rifut.html assets/Rifut.html; fi
+          if [ -f "index.html" ]; then cp index.html assets/Rifut.html; fi
+          
           cat > pubspec.yaml <<'EOF'
           name: rincon_futbolero
           description: Rincon Futbolero PRO
@@ -36,6 +42,8 @@ jobs:
             assets:
               - assets/Rifut.html
           EOF
+
+          mkdir -p lib
           cat > lib/main.dart <<'EOF'
           import 'package:flutter/material.dart';
           import 'package:webview_flutter/webview_flutter.dart';
@@ -60,10 +68,14 @@ jobs:
             }
             @override
             Widget build(BuildContext context) {
-              return Scaffold(appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white), body: WebViewWidget(controller: controller));
+              return Scaffold(
+                appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white),
+                body: WebViewWidget(controller: controller)
+              );
             }
           }
           EOF
+
       - run: flutter pub get
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
