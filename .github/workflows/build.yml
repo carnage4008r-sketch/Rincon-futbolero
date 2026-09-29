@@ -11,7 +11,7 @@ jobs:
         with: {distribution: 'temurin', java-version: '17'}
       - uses: subosito/flutter-action@v2
         with: {flutter-version: '3.22.0', channel: stable}
-      - name: Build APK FIX IMAGENES
+      - name: Build APK FINAL CON LOGOS
         run: |
           rm -rf android ios lib
           flutter create . --platforms=android --project-name rincon_futbolero
@@ -23,16 +23,21 @@ jobs:
           cat > pubspec.yaml <<'EOF'
           name: rincon_futbolero
           description: Rincon Futbolero PRO
-          version: 2.1.0+1
+          version: 3.0.0+1
           environment: {sdk: '>=3.0.0 <4.0.0'}
-          dependencies: {flutter: {sdk: flutter}, webview_flutter: ^4.8.0}
+          dependencies:
+            flutter: {sdk: flutter}
+            webview_flutter: ^4.8.0
+            file_picker: ^8.1.2
           flutter: {uses-material-design: true, assets: [assets/]}
           EOF
           cat > lib/main.dart <<'EOF'
           import 'dart:convert';
+          import 'dart:io';
           import 'package:flutter/material.dart';
           import 'package:flutter/services.dart';
           import 'package:webview_flutter/webview_flutter.dart';
+          import 'package:file_picker/file_picker.dart';
           void main()=>runApp(const MyApp());
           class MyApp extends StatelessWidget{const MyApp({super.key}); @override Widget build(BuildContext c)=>const MaterialApp(debugShowCheckedModeBanner: false, home: ProApp());}
           class ProApp extends StatefulWidget{const ProApp({super.key}); @override State<ProApp> createState()=>_ProAppState();}
@@ -42,21 +47,33 @@ jobs:
             @override void initState(){super.initState(); _init();}
             Future<void> _init() async {
               String html = await rootBundle.loadString('assets/Rifut.html');
-              List<int> logoBytes = (await rootBundle.load('assets/logo.png')).buffer.asUint8List();
-              String base64Logo = base64Encode(logoBytes);
-              html = html.replaceAll('logo.png', 'data:image/png;base64,$base64Logo');
+              final bytes = (await rootBundle.load('assets/logo.png')).buffer.asUint8List();
+              final b64 = base64Encode(bytes);
+              // Incrusta logo principal para que no salga blanco
+              html = html.replaceAll(RegExp(r'logo\.png'), 'data:image/png;base64,$b64');
               ctrl = WebViewController()
                 ..setJavaScriptMode(JavaScriptMode.unrestricted)
                 ..setBackgroundColor(const Color(0xFF0A5C36))
+                ..setOnShowFileSelector((params) async {
+                  // Esto hace que "Seleccionar archivo" ABRA la galeria
+                  final result = await FilePicker.platform.pickFiles(type: FileType.image, withData: false);
+                  if (result == null || result.files.isEmpty) return [];
+                  final path = result.files.first.path;
+                  if (path == null) return [];
+                  return [File(path).uri.toString()];
+                })
                 ..loadHtmlString(html, baseUrl: 'https://localhost/');
               setState(()=>loading=false);
             }
-            @override Widget build(BuildContext b)=>Scaffold(backgroundColor: const Color(0xFF0A5C36), appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white), body: loading ? const Center(child: CircularProgressIndicator(color: Colors.white)) : WebViewWidget(controller: ctrl));
+            @override Widget build(BuildContext b)=>Scaffold(
+              backgroundColor: const Color(0xFF0A5C36),
+              appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white),
+              body: loading ? const Center(child: CircularProgressIndicator(color: Colors.white)) : WebViewWidget(controller: ctrl));
           }
           EOF
       - run: flutter pub get
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
-          name: Rincon-Futbolero-APK-FINAL
+          name: Rincon-Futbolero-CON-LOGOS
           path: build/app/outputs/flutter-apk/app-release.apk
