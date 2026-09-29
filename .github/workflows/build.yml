@@ -11,15 +11,19 @@ jobs:
         with: {distribution: 'temurin', java-version: '17'}
       - uses: subosito/flutter-action@v2
         with: {flutter-version: '3.22.0', channel: stable}
-      - name: Build APK
+      - name: Build APK FIX PNG
         run: |
           rm -rf android ios lib
           flutter create . --platforms=android --project-name rincon_futbolero
+          pip install pillow -q
+          python3 -c "from PIL import Image; im=Image.open('logo.png').convert('RGBA'); im.save('logo_fixed.png', 'PNG')"
           mkdir -p assets
           cp Rifut.html assets/Rifut.html
-          cp logo.png assets/logo.png
-          for d in android/app/src/main/res/mipmap-*; do cp logo.png $d/ic_launcher.png; done
-          mkdir -p android/app/src/main/res/drawable && cp logo.png android/app/src/main/res/drawable/ic_launcher.png
+          cp logo_fixed.png assets/logo.png
+          cp logo_fixed.png logo.png
+          mkdir -p android/app/src/main/res/drawable
+          cp logo_fixed.png android/app/src/main/res/drawable/ic_launcher.png
+          for d in android/app/src/main/res/mipmap-*; do cp logo_fixed.png $d/ic_launcher.png; done
           cat > pubspec.yaml <<'EOF'
           name: rincon_futbolero
           description: Rincon Futbolero PRO
