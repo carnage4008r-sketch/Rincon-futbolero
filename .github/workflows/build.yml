@@ -16,7 +16,7 @@ jobs:
           flutter-version: '3.27.3'
           channel: stable
       - name: crear
-        run: flutter create. --platforms=android --project-name rincon_futbolero
+        run: flutter create . --platforms=android --project-name rincon_futbolero
       - name: icono
         run: |
           mkdir -p assets
