@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK PRO
 on:
   push:
     branches: [ main ]
@@ -7,21 +7,66 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.0'
           channel: stable
-      - name: Crear Android
+      - name: Preparar proyecto
         run: |
-          cp lib/main.dart /tmp/m.dart || true
-          cp pubspec.yaml /tmp/p.yaml || true
-          flutter create . --platforms=android --project-name=rincon_futbolero --org com.rincon --overwrite
-          cp /tmp/m.dart lib/main.dart || true
-          cp /tmp/p.yaml pubspec.yaml || true
+          mkdir -p assets
+          cp "Rifut .html" assets/Rifut.html 2>/dev/null || cp Rifut.html assets/Rifut.html 2>/dev/null || cp index.html assets/Rifut.html 2>/dev/null || echo "no html"
+          cat > pubspec.yaml <<'EOF'
+          name: rincon_futbolero
+          description: Rincon Futbolero PRO
+          publish_to: 'none'
+          version: 2.0.0+1
+          environment:
+            sdk: '>=3.0.0 <4.0.0'
+          dependencies:
+            flutter:
+              sdk: flutter
+            webview_flutter: ^4.8.0
+            cupertino_icons: ^1.0.5
+          flutter:
+            uses-material-design: true
+            assets:
+              - assets/Rifut.html
+          EOF
+          cat > lib/main.dart <<'EOF'
+          import 'package:flutter/material.dart';
+          import 'package:webview_flutter/webview_flutter.dart';
+          void main() { runApp(const MyApp()); }
+          class MyApp extends StatelessWidget {
+            const MyApp({super.key});
+            @override
+            Widget build(BuildContext context) {
+              return const MaterialApp(debugShowCheckedModeBanner: false, home: ProApp());
+            }
+          }
+          class ProApp extends StatefulWidget { const ProApp({super.key}); @override State<ProApp> createState() => _ProAppState(); }
+          class _ProAppState extends State<ProApp> {
+            late final WebViewController controller;
+            @override
+            void initState() {
+              super.initState();
+              controller = WebViewController()
+                ..setJavaScriptMode(JavaScriptMode.unrestricted)
+                ..setBackgroundColor(Colors.white)
+                ..loadFlutterAsset('assets/Rifut.html');
+            }
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white), body: WebViewWidget(controller: controller));
+            }
+          }
+          EOF
       - run: flutter pub get
       - run: flutter build apk --release
-      - name: Subir APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: Rincon-Futbolero-APK
+          name: Rincon-Futbolero-PRO-APK
           path: build/app/outputs/flutter-apk/app-release.apk
