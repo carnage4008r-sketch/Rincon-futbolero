@@ -11,97 +11,69 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: gradle/actions/setup-gradle@v3
-      - name: Crear proyecto nativo
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.3'
+          channel: stable
+
+      - name: Crear proyecto
+        run: flutter create. --platforms=android --project-name rincon_futbolero --overwrite
+
+      - name: Configurar assets
         run: |
-          mkdir -p app/src/main/assets
-          mkdir -p app/src/main/java/com/rincon/futbolero
-          mkdir -p gradle/wrapper
+          mkdir -p assets
+          if [ -f Rifut.html ]; then cp Rifut.html assets/Rifut.html; fi
+          if [ -f assets/Rifut.html ]; then echo "Rifut ok"; else echo "FALTA Rifut.html en raiz"; exit 1; fi
+          if [ -f logo.png ]; then cp logo.png assets/logo.png; fi
+          ls -l assets/
 
-          cat > settings.gradle <<'EOF'
-          pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
-          }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-          include ':app'
+      - name: Crear pubspec
+        run: |
+          cat > pubspec.yaml <<'EOF'
+          name: rincon_futbolero
+          environment:
+            sdk: '>=3.2.0 <4.0.0'
+          dependencies:
+            flutter:
+              sdk: flutter
+            flutter_inappwebview: ^6.1.5
+          flutter:
+            uses-material-design: true
+            assets:
+              - assets/Rifut.html
+              - assets/logo.png
           EOF
 
-          cat > build.gradle <<'EOF'
-          // vacio, los plugins estan en settings
-          EOF
-
-          echo "distributionBase=GRADLE_USER_HOME
-          distributionPath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-all.zip
-          zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists" > gradle/wrapper/gradle-wrapper.properties
-
-          cat > app/build.gradle <<'EOF'
-          plugins { id 'com.android.application' }
-          android {
-              namespace 'com.rincon.futbolero'
-              compileSdk 34
-              defaultConfig {
-                  applicationId "com.rincon.futbolero"
-                  minSdk 21
-                  targetSdk 34
-                  versionCode 1
-                  versionName "1.0"
-              }
-              compileOptions {
-                  sourceCompatibility JavaVersion.VERSION_17
-                  targetCompatibility JavaVersion.VERSION_17
-              }
+      - name: Crear main.dart
+        run: |
+          cat > lib/main.dart <<'EOF'
+          import 'package:flutter/material.dart';
+          import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+          void main(){ WidgetsFlutterBinding.ensureInitialized(); runApp(const MaterialApp(debugShowCheckedModeBanner:false, home: App())); }
+          class App extends StatefulWidget{ const App({super.key}); @override State<App> createState()=>_S(); }
+          class _S extends State<App>{
+            @override Widget build(BuildContext context){
+              return Scaffold(
+                backgroundColor: const Color(0xFF080D08),
+                body: SafeArea(
+                  child: InAppWebView(
+                    initialFile: "assets/Rifut.html",
+                    initialSettings: InAppWebViewSettings(javaScriptEnabled: true, domStorageEnabled: true, allowFileAccess: true),
+                  ),
+                ),
+              );
+            }
           }
           EOF
 
-          cat > app/src/main/AndroidManifest.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rincon.futbolero">
-              <application android:allowBackup="true" android:label="Rincon Futbolero" android:theme="@android:style/Theme.NoTitleBar">
-                  <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          EOF
+      - name: pub get
+        run: flutter pub get
 
-          cat > app/src/main/java/com/rincon/futbolero/MainActivity.java <<'EOF'
-          package com.rincon.futbolero;
-          import android.os.Bundle; import android.webkit.WebSettings; import android.webkit.WebView; import android.webkit.WebViewClient; import androidx.appcompat.app.AppCompatActivity;
-          public class MainActivity extends AppCompatActivity {
-              WebView web;
-              @Override protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  web = new WebView(this); setContentView(web);
-                  WebSettings s = web.getSettings(); s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); s.setAllowFileAccess(true); s.setAllowFileAccessFromFileURLs(true); s.setAllowUniversalAccessFromFileURLs(true);
-                  web.setWebViewClient(new WebViewClient()); web.loadUrl("file:///android_asset/Rifut.html");
-              }
-          }
-          EOF
-
-          # Copia tu html - busca donde este
-          if [ -f Rifut.html ]; then cp Rifut.html app/src/main/assets/Rifut.html; fi
-          if [ -f assets/Rifut.html ]; then cp assets/Rifut.html app/src/main/assets/Rifut.html; fi
-          if [ -f logo.png ]; then cp logo.png app/src/main/assets/logo.png; fi
-
-          ls -R app/src/main/
-
-      - name: Build APK
-        run: gradle :app:assembleDebug --stacktrace
+      - name: build apk
+        run: flutter build apk --release
 
       - name: subir apk
         uses: actions/upload-artifact@v4
         with:
-          name: APK-RINCON-NATIVO
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: APK-RINCON-FINAL
+          path: build/app/outputs/flutter-apk/app-release.apk
