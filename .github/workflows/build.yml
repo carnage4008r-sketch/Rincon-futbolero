@@ -12,7 +12,7 @@ jobs:
       - name: Build
         run: |
           rm -rf android ios lib
-          flutter create. --platforms=android --project-name rincon_futbolero
+          flutter create . --platforms=android --project-name rincon_futbolero
           sed -i "s/8.1.0/8.3.0/g" android/settings.gradle
           sed -i "s/gradle-.*-all.zip/gradle-8.4-all.zip/g" android/gradle/wrapper/gradle-wrapper.properties
           pip install pillow -q
