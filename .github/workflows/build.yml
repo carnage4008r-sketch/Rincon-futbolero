@@ -11,7 +11,7 @@ jobs:
         with: {distribution: 'temurin', java-version: '17'}
       - uses: subosito/flutter-action@v2
         with: {flutter-version: '3.27.3', channel: stable}
-      - name: Build FINAL
+      - name: Build FIX DEFINITIVO VERDE
         run: |
           rm -rf android ios lib
           flutter create . --platforms=android --project-name rincon_futbolero
@@ -33,11 +33,11 @@ jobs:
           PY
           mkdir -p assets
           cp Rifut.html assets/
-          cp logo_fixed.png assets/logo.png
+          cp logo.png assets/
           cat > pubspec.yaml <<'EOF'
           name: rincon_futbolero
           description: Rincon Futbolero PRO
-          version: 7.0.0+1
+          version: 8.0.0+1
           environment: {sdk: '>=3.2.0 <4.0.0'}
           dependencies:
             flutter: {sdk: flutter}
@@ -49,13 +49,30 @@ jobs:
           import 'package:flutter_inappwebview/flutter_inappwebview.dart';
           void main() async { WidgetsFlutterBinding.ensureInitialized(); runApp(const MyApp()); }
           class MyApp extends StatelessWidget{const MyApp({super.key}); @override Widget build(BuildContext c)=>const MaterialApp(debugShowCheckedModeBanner:false, home:ProApp());}
-          class ProApp extends StatelessWidget{
-            const ProApp({super.key});
+          class ProApp extends StatefulWidget{const ProApp({super.key}); @override State<ProApp> createState()=>_ProAppState();}
+          class _ProAppState extends State<ProApp>{
+            InAppWebViewController? webViewController;
             @override Widget build(BuildContext context){
               return Scaffold(
                 backgroundColor: const Color(0xFF0A5C36),
                 appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white),
-                body: InAppWebView(initialFile: "assets/Rifut.html", initialSettings: InAppWebViewSettings(javaScriptEnabled:true, domStorageEnabled:true, allowFileAccess:true, allowContentAccess:true, allowFileAccessFromFileURLs:true, allowUniversalAccessFromFileURLs:true, useHybridComposition:true)),
+                body: InAppWebView(
+                  onWebViewCreated: (controller) { webViewController = controller; },
+                  onLoadStart: (controller, url) async {
+                    if (url == null || url.toString() == "about:blank") {
+                      await controller.loadFile(assetFilePath: "assets/Rifut.html");
+                    }
+                  },
+                  initialSettings: InAppWebViewSettings(
+                    javaScriptEnabled: true,
+                    domStorageEnabled: true,
+                    allowFileAccess: true,
+                    allowContentAccess: true,
+                    allowFileAccessFromFileURLs: true,
+                    allowUniversalAccessFromFileURLs: true,
+                    useHybridComposition: true,
+                  ),
+                ),
               );
             }
           }
@@ -64,5 +81,5 @@ jobs:
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
-          name: APK-RINCON-FUTBOLERO
+          name: APK-FIX-VERDE-DEFINITIVO
           path: build/app/outputs/flutter-apk/app-release.apk
