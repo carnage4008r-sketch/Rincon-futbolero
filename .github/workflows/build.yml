@@ -11,62 +11,64 @@ jobs:
         with: {distribution: 'temurin', java-version: '17'}
       - uses: subosito/flutter-action@v2
         with: {flutter-version: '3.27.3', channel: stable}
-      - name: Build APK FINAL
+      - name: Build APK ICONO + LOGOS
         run: |
           rm -rf android ios lib
           flutter create . --platforms=android --project-name rincon_futbolero
           pip install pillow -q
-          python3 -c "from PIL import Image; im=Image.open('logo.png').convert('RGBA'); im.save('logo_fixed.png','PNG')"
+          python3 << 'PY'
+          from PIL import Image
+          im = Image.open('logo.png').convert('RGBA')
+          im.save('logo_fixed.png','PNG')
+          # Genera iconos para Android
+          for size, folder in [(48,'mipmap-mdpi'),(72,'mipmap-hdpi'),(96,'mipmap-xhdpi'),(144,'mipmap-xxhdpi'),(192,'mipmap-xxxhdpi')]:
+              import os
+              path = f'android/app/src/main/res/{folder}'
+              os.makedirs(path, exist_ok=True)
+              Image.open('logo_fixed.png').resize((size,size), Image.LANCZOS).save(f'{path}/ic_launcher.png','PNG')
+              Image.open('logo_fixed.png').resize((size,size), Image.LANCZOS).save(f'{path}/ic_launcher_foreground.png','PNG')
+          PY
           mkdir -p assets
           cp Rifut.html assets/Rifut.html
           cp logo_fixed.png assets/logo.png
           cat > pubspec.yaml <<'EOF'
           name: rincon_futbolero
           description: Rincon Futbolero PRO
-          version: 3.0.2+1
+          version: 5.0.0+1
           environment: {sdk: '>=3.2.0 <4.0.0'}
           dependencies:
             flutter: {sdk: flutter}
-            webview_flutter: ^4.10.0
-            file_picker: ^8.1.2
-          flutter: {uses-material-design: true, assets: [assets/]}
+            flutter_inappwebview: ^6.1.5
+          flutter: {uses-material-design: true, assets: [assets/Rifut.html, assets/logo.png]}
           EOF
           cat > lib/main.dart <<'EOF'
           import 'dart:convert';
-          import 'dart:io';
           import 'package:flutter/material.dart';
           import 'package:flutter/services.dart';
-          import 'package:webview_flutter/webview_flutter.dart';
-          import 'package:file_picker/file_picker.dart';
-          void main()=>runApp(const MyApp());
+          import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+          void main() async {
+            WidgetsFlutterBinding.ensureInitialized();
+            await InAppWebViewController.setWebContentsDebuggingEnabled(true);
+            runApp(const MyApp());
+          }
           class MyApp extends StatelessWidget{const MyApp({super.key}); @override Widget build(BuildContext c)=>const MaterialApp(debugShowCheckedModeBanner: false, home: ProApp());}
           class ProApp extends StatefulWidget{const ProApp({super.key}); @override State<ProApp> createState()=>_ProAppState();}
           class _ProAppState extends State<ProApp>{
-            late final WebViewController ctrl;
-            bool loading=true;
-            @override void initState(){super.initState(); _init();}
-            Future<void> _init() async {
+            String? htmlContent;
+            @override void initState(){super.initState(); _loadHtml();}
+            Future<void> _loadHtml() async {
               String html = await rootBundle.loadString('assets/Rifut.html');
               final bytes = (await rootBundle.load('assets/logo.png')).buffer.asUint8List();
               final b64 = base64Encode(bytes);
               html = html.replaceAll(RegExp(r'logo\.png'), 'data:image/png;base64,$b64');
-              ctrl = WebViewController()
-                ..setJavaScriptMode(JavaScriptMode.unrestricted)
-                ..setBackgroundColor(const Color(0xFF0A5C36))
-                ..setOnShowFileSelector((params) async {
-                  final result = await FilePicker.platform.pickFiles(type: FileType.image);
-                  if (result == null) return [];
-                  return result.paths.whereType<String>().map((p) => File(p).uri.toString()).toList();
-                })
-                ..loadHtmlString(html, baseUrl: 'https://localhost/');
-              setState(()=>loading=false);
+              setState(()=> htmlContent = html);
             }
-            @override Widget build(BuildContext b)=>Scaffold(backgroundColor: const Color(0xFF0A5C36), appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white), body: loading ? const Center(child: CircularProgressIndicator(color: Colors.white)) : WebViewWidget(controller: ctrl));
+            @override Widget build(BuildContext b)=>Scaffold(backgroundColor: const Color(0xFF0A5C36), appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white), body: htmlContent == null ? const Center(child: CircularProgressIndicator(color: Colors.white)) : InAppWebView(initialData: InAppWebViewInitialData(data: htmlContent!), initialSettings: InAppWebViewSettings(javaScriptEnabled: true, allowFileAccess: true, allowContentAccess: true, domStorageEnabled: true)));
           }
           EOF
       - run: flutter pub get
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
-          name: Rincon-Futbolero-CON-LOGOS
+          name: Rincon-Futbolero-ICONO-LOGOS
           path: build/app/outputs/flutter-apk/app-release.apk
