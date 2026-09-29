@@ -11,13 +11,17 @@ jobs:
         with: {distribution: 'temurin', java-version: '17'}
       - uses: subosito/flutter-action@v2
         with: {flutter-version: '3.27.3', channel: stable}
-      - name: Build APK ICONO + FIX GRADLE
+      - name: Build APK ICONO + GRADLE FIX
         run: |
           rm -rf android ios lib
           flutter create . --platforms=android --project-name rincon_futbolero
-          # PARCHE: subir Gradle plugin de 8.1.0 a 8.3.0
+          # FIX 1: AGP 8.3.0
           sed -i "s/8.1.0/8.3.0/g" android/settings.gradle
-          sed -i "s/8.1.0/8.3.0/g" android/build.gradle 2>/dev/null || true
+          # FIX 2: Gradle 8.4 (era lo que te faltaba)
+          sed -i "s/gradle-8.3-all.zip/gradle-8.4-all.zip/g" android/gradle/wrapper/gradle-wrapper.properties
+          sed -i "s/gradle-8.1.0-all.zip/gradle-8.4-all.zip/g" android/gradle/wrapper/gradle-wrapper.properties || true
+          sed -i "s/gradle-.*-all.zip/gradle-8.4-all.zip/g" android/gradle/wrapper/gradle-wrapper.properties
+          cat android/gradle/wrapper/gradle-wrapper.properties
           pip install pillow -q
           python3 << 'PY'
           from PIL import Image
@@ -40,7 +44,7 @@ jobs:
           cat > pubspec.yaml <<'EOF'
           name: rincon_futbolero
           description: Rincon Futbolero PRO
-          version: 5.2.0+1
+          version: 5.3.0+1
           environment: {sdk: '>=3.2.0 <4.0.0'}
           dependencies:
             flutter: {sdk: flutter}
@@ -64,18 +68,10 @@ jobs:
               final bytes = (await rootBundle.load('assets/logo.png')).buffer.asUint8List();
               final b64 = base64Encode(bytes);
               html = html.replaceAll('logo.png', 'data:image/png;base64,$b64');
-              html = html.replaceAll('./logo.png', 'data:image/png;base64,$b64');
-              ctrl = WebViewController()
-                ..setJavaScriptMode(JavaScriptMode.unrestricted)
-                ..setBackgroundColor(const Color(0xFF0A5C36))
-                ..loadHtmlString(html, baseUrl: 'https://localhost/');
+              ctrl = WebViewController()..setJavaScriptMode(JavaScriptMode.unrestricted)..setBackgroundColor(const Color(0xFF0A5C36))..loadHtmlString(html, baseUrl: 'https://localhost/');
               setState(()=> ready=true);
             }
-            @override Widget build(BuildContext b)=>Scaffold(
-              backgroundColor: const Color(0xFF0A5C36),
-              appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white),
-              body: !ready ? const Center(child: CircularProgressIndicator(color: Colors.white)) : WebViewWidget(controller: ctrl),
-            );
+            @override Widget build(BuildContext b)=>Scaffold(backgroundColor: const Color(0xFF0A5C36), appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white), body: !ready ? const Center(child: CircularProgressIndicator(color: Colors.white)) : WebViewWidget(controller: ctrl));
           }
           EOF
       - run: flutter pub get
