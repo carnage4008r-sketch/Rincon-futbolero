@@ -17,8 +17,29 @@ jobs:
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/java/com/rincon/futbolero
           mkdir -p gradle/wrapper
-          echo "include ':app'" > settings.gradle
-          echo "plugins { id 'com.android.application' version '8.3.0' apply false }" > build.gradle
+
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          include ':app'
+          EOF
+
+          cat > build.gradle <<'EOF'
+          // vacio, los plugins estan en settings
+          EOF
+
           echo "distributionBase=GRADLE_USER_HOME
           distributionPath=wrapper/dists
           distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-all.zip
@@ -30,7 +51,17 @@ jobs:
           android {
               namespace 'com.rincon.futbolero'
               compileSdk 34
-              defaultConfig { applicationId "com.rincon.futbolero"; minSdk 21; targetSdk 34; versionCode 1; versionName "1.0" }
+              defaultConfig {
+                  applicationId "com.rincon.futbolero"
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
           }
           EOF
 
@@ -53,18 +84,22 @@ jobs:
               @Override protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   web = new WebView(this); setContentView(web);
-                  WebSettings s = web.getSettings(); s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); s.setAllowFileAccess(true);
+                  WebSettings s = web.getSettings(); s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); s.setAllowFileAccess(true); s.setAllowFileAccessFromFileURLs(true); s.setAllowUniversalAccessFromFileURLs(true);
                   web.setWebViewClient(new WebViewClient()); web.loadUrl("file:///android_asset/Rifut.html");
               }
-              @Override public void onBackPressed() { if (web.canGoBack()) web.goBack(); else super.onBackPressed(); }
           }
           EOF
 
-          cp Rifut.html app/src/main/assets/Rifut.html || cp assets/Rifut.html app/src/main/assets/Rifut.html
-          cp logo.png app/src/main/assets/logo.png || true
+          # Copia tu html - busca donde este
+          if [ -f Rifut.html ]; then cp Rifut.html app/src/main/assets/Rifut.html; fi
+          if [ -f assets/Rifut.html ]; then cp assets/Rifut.html app/src/main/assets/Rifut.html; fi
+          if [ -f logo.png ]; then cp logo.png app/src/main/assets/logo.png; fi
+
+          ls -R app/src/main/
 
       - name: Build APK
-        run: gradle :app:assembleDebug
+        run: gradle :app:assembleDebug --stacktrace
+
       - name: subir apk
         uses: actions/upload-artifact@v4
         with:
