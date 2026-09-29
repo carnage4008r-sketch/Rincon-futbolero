@@ -10,8 +10,8 @@ jobs:
       - uses: actions/setup-java@v4
         with: {distribution: 'temurin', java-version: '17'}
       - uses: subosito/flutter-action@v2
-        with: {flutter-version: '3.22.0', channel: stable}
-      - name: Build APK FINAL CON LOGOS
+        with: {flutter-version: '3.24.0', channel: stable}
+      - name: Build APK FINAL
         run: |
           rm -rf android ios lib
           flutter create . --platforms=android --project-name rincon_futbolero
@@ -23,11 +23,11 @@ jobs:
           cat > pubspec.yaml <<'EOF'
           name: rincon_futbolero
           description: Rincon Futbolero PRO
-          version: 3.0.0+1
+          version: 3.0.1+1
           environment: {sdk: '>=3.0.0 <4.0.0'}
           dependencies:
             flutter: {sdk: flutter}
-            webview_flutter: ^4.8.0
+            webview_flutter: ^4.13.0
             file_picker: ^8.1.2
           flutter: {uses-material-design: true, assets: [assets/]}
           EOF
@@ -49,18 +49,14 @@ jobs:
               String html = await rootBundle.loadString('assets/Rifut.html');
               final bytes = (await rootBundle.load('assets/logo.png')).buffer.asUint8List();
               final b64 = base64Encode(bytes);
-              // Incrusta logo principal para que no salga blanco
               html = html.replaceAll(RegExp(r'logo\.png'), 'data:image/png;base64,$b64');
               ctrl = WebViewController()
                 ..setJavaScriptMode(JavaScriptMode.unrestricted)
                 ..setBackgroundColor(const Color(0xFF0A5C36))
                 ..setOnShowFileSelector((params) async {
-                  // Esto hace que "Seleccionar archivo" ABRA la galeria
-                  final result = await FilePicker.platform.pickFiles(type: FileType.image, withData: false);
-                  if (result == null || result.files.isEmpty) return [];
-                  final path = result.files.first.path;
-                  if (path == null) return [];
-                  return [File(path).uri.toString()];
+                  final result = await FilePicker.platform.pickFiles(type: FileType.image);
+                  if (result == null) return [];
+                  return result.paths.whereType<String>().map((p) => File(p).uri.toString()).toList();
                 })
                 ..loadHtmlString(html, baseUrl: 'https://localhost/');
               setState(()=>loading=false);
