@@ -8,77 +8,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+        with: {distribution: 'temurin', java-version: '17'}
       - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.22.0'
-          channel: stable
-
-      - name: Preparar proyecto
+        with: {flutter-version: '3.22.0', channel: stable}
+      - name: Build PRO con archivos en raiz
         run: |
-          rm -rf android ios
+          rm -rf android ios lib
           flutter create . --platforms=android --project-name rincon_futbolero
           mkdir -p assets
-          if [ -f "Rifut .html" ]; then cp "Rifut .html" assets/Rifut.html; fi
-          if [ -f "Rifut.html" ]; then cp Rifut.html assets/Rifut.html; fi
-          if [ -f "index.html" ]; then cp index.html assets/Rifut.html; fi
-          
+          cp Rifut.html assets/Rifut.html
+          cp logo.png assets/logo.png
+          # Poner icono oficial
+          for d in android/app/src/main/res/mipmap-*; do cp logo.png $d/ic_launcher.png; done
+          mkdir -p android/app/src/main/res/drawable && cp logo.png android/app/src/main/res/drawable/ic_launcher.png
           cat > pubspec.yaml <<'EOF'
           name: rincon_futbolero
           description: Rincon Futbolero PRO
-          publish_to: 'none'
           version: 2.0.0+1
-          environment:
-            sdk: '>=3.0.0 <4.0.0'
-          dependencies:
-            flutter:
-              sdk: flutter
-            webview_flutter: ^4.8.0
-            cupertino_icons: ^1.0.5
-          flutter:
-            uses-material-design: true
-            assets:
-              - assets/Rifut.html
+          environment: {sdk: '>=3.0.0 <4.0.0'}
+          dependencies: {flutter: {sdk: flutter}, webview_flutter: ^4.8.0}
+          flutter: {uses-material-design: true, assets: [assets/]}
           EOF
-
-          mkdir -p lib
           cat > lib/main.dart <<'EOF'
-          import 'package:flutter/material.dart';
-          import 'package:webview_flutter/webview_flutter.dart';
-          void main() { runApp(const MyApp()); }
-          class MyApp extends StatelessWidget {
-            const MyApp({super.key});
-            @override
-            Widget build(BuildContext context) {
-              return const MaterialApp(debugShowCheckedModeBanner: false, home: ProApp());
-            }
-          }
-          class ProApp extends StatefulWidget { const ProApp({super.key}); @override State<ProApp> createState() => _ProAppState(); }
-          class _ProAppState extends State<ProApp> {
-            late final WebViewController controller;
-            @override
-            void initState() {
-              super.initState();
-              controller = WebViewController()
-                ..setJavaScriptMode(JavaScriptMode.unrestricted)
-                ..setBackgroundColor(Colors.white)
-                ..loadFlutterAsset('assets/Rifut.html');
-            }
-            @override
-            Widget build(BuildContext context) {
-              return Scaffold(
-                appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white),
-                body: WebViewWidget(controller: controller)
-              );
-            }
-          }
+          import 'package:flutter/material.dart'; import 'package:webview_flutter/webview_flutter.dart';
+          void main()=>runApp(const MyApp());
+          class MyApp extends StatelessWidget{const MyApp({super.key}); @override Widget build(BuildContext c)=>const MaterialApp(debugShowCheckedModeBanner: false, home: ProApp());}
+          class ProApp extends StatefulWidget{const ProApp({super.key}); @override State<ProApp> createState()=>_ProAppState();}
+          class _ProAppState extends State<ProApp>{late final WebViewController ctrl; @override void initState(){super.initState(); ctrl=WebViewController()..setJavaScriptMode(JavaScriptMode.unrestricted)..loadFlutterAsset('assets/Rifut.html');} @override Widget build(BuildContext b)=>Scaffold(appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white), body: WebViewWidget(controller: ctrl));}
           EOF
-
       - run: flutter pub get
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
-          name: Rincon-Futbolero-PRO-APK
+          name: Rincon-PRO-LOGO-OFICIAL
           path: build/app/outputs/flutter-apk/app-release.apk
