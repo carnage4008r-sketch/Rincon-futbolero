@@ -11,37 +11,68 @@ jobs:
         with: {distribution: 'temurin', java-version: '17'}
       - uses: subosito/flutter-action@v2
         with: {flutter-version: '3.22.0', channel: stable}
-      - name: Build APK FIX PNG
+      - name: Build APK FIX IMAGENES
         run: |
           rm -rf android ios lib
           flutter create . --platforms=android --project-name rincon_futbolero
           pip install pillow -q
-          python3 -c "from PIL import Image; im=Image.open('logo.png').convert('RGBA'); im.save('logo_fixed.png', 'PNG')"
+          python3 -c "from PIL import Image; im=Image.open('logo.png').convert('RGBA'); im.save('logo_fixed.png','PNG')"
           mkdir -p assets
           cp Rifut.html assets/Rifut.html
           cp logo_fixed.png assets/logo.png
-          cp logo_fixed.png logo.png
-          mkdir -p android/app/src/main/res/drawable
-          cp logo_fixed.png android/app/src/main/res/drawable/ic_launcher.png
-          for d in android/app/src/main/res/mipmap-*; do cp logo_fixed.png $d/ic_launcher.png; done
+          # Permisos para galeria
+          sed -i '/<application/a \    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />' android/app/src/main/AndroidManifest.xml || true
           cat > pubspec.yaml <<'EOF'
           name: rincon_futbolero
           description: Rincon Futbolero PRO
-          version: 2.0.0+1
+          version: 2.1.0+1
           environment: {sdk: '>=3.0.0 <4.0.0'}
           dependencies: {flutter: {sdk: flutter}, webview_flutter: ^4.8.0}
           flutter: {uses-material-design: true, assets: [assets/]}
           EOF
           cat > lib/main.dart <<'EOF'
-          import 'package:flutter/material.dart'; import 'package:webview_flutter/webview_flutter.dart';
+          import 'dart:convert';
+          import 'dart:io';
+          import 'package:flutter/material.dart';
+          import 'package:flutter/services.dart';
+          import 'package:webview_flutter/webview_flutter.dart';
           void main()=>runApp(const MyApp());
           class MyApp extends StatelessWidget{const MyApp({super.key}); @override Widget build(BuildContext c)=>const MaterialApp(debugShowCheckedModeBanner: false, home: ProApp());}
           class ProApp extends StatefulWidget{const ProApp({super.key}); @override State<ProApp> createState()=>_ProAppState();}
-          class _ProAppState extends State<ProApp>{late final WebViewController ctrl; @override void initState(){super.initState(); ctrl=WebViewController()..setJavaScriptMode(JavaScriptMode.unrestricted)..loadFlutterAsset('assets/Rifut.html');} @override Widget build(BuildContext b)=>Scaffold(appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white), body: WebViewWidget(controller: ctrl));}
+          class _ProAppState extends State<ProApp>{
+            late final WebViewController ctrl;
+            bool loading=true;
+            @override void initState(){
+              super.initState();
+              _init();
+            }
+            Future<void> _init() async {
+              String html = await rootBundle.loadString('assets/Rifut.html');
+              List<int> logoBytes = (await rootBundle.load('assets/logo.png')).buffer.asUint8List();
+              String base64Logo = base64Encode(logoBytes);
+              // Reemplaza cualquier referencia a logo.png por base64
+              html = html.replaceAll('src="logo.png"', 'src="data:image/png;base64,$base64Logo"');
+              html = html.replaceAll("src='logo.png'", "src='data:image/png;base64,$base64Logo'");
+              html = html.replaceAll('src="./logo.png"', 'src="data:image/png;base64,$base64Logo"');
+              html = html.replaceAll('logo.png', 'data:image/png;base64,$base64Logo');
+              
+              ctrl = WebViewController()
+                ..setJavaScriptMode(JavaScriptMode.unrestricted)
+                ..setBackgroundColor(const Color(0xFF0A5C36))
+                ..enableZoom(false)
+                ..setNavigationDelegate(NavigationDelegate(onPageFinished: (_){setState(()=>loading=false);} ))
+                ..loadHtmlString(html, baseUrl: 'https://localhost/');
+              setState(()=>loading=false);
+            }
+            @override Widget build(BuildContext b)=>Scaffold(
+              backgroundColor: const Color(0xFF0A5C36),
+              appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white),
+              body: loading ? const Center(child: CircularProgressIndicator(color: Colors.white)) : WebViewWidget(controller: ctrl));
+          }
           EOF
       - run: flutter pub get
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
-          name: Rincon-Futbolero-APK
+          name: Rincon-Futbolero-APK-FINAL
           path: build/app/outputs/flutter-apk/app-release.apk
