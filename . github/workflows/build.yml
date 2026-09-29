@@ -11,14 +11,13 @@ jobs:
         with: {distribution: 'temurin', java-version: '17'}
       - uses: subosito/flutter-action@v2
         with: {flutter-version: '3.22.0', channel: stable}
-      - name: Build PRO con archivos en raiz
+      - name: Build APK
         run: |
           rm -rf android ios lib
           flutter create . --platforms=android --project-name rincon_futbolero
           mkdir -p assets
           cp Rifut.html assets/Rifut.html
           cp logo.png assets/logo.png
-          # Poner icono oficial
           for d in android/app/src/main/res/mipmap-*; do cp logo.png $d/ic_launcher.png; done
           mkdir -p android/app/src/main/res/drawable && cp logo.png android/app/src/main/res/drawable/ic_launcher.png
           cat > pubspec.yaml <<'EOF'
@@ -40,5 +39,5 @@ jobs:
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
-          name: Rincon-PRO-LOGO-OFICIAL
+          name: Rincon-Futbolero-APK
           path: build/app/outputs/flutter-apk/app-release.apk
