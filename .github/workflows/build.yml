@@ -1,7 +1,5 @@
 name: build
-on:
-  push:
-    branches: [ main ]
+on: {push: {branches: [main]}}
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,56 +9,51 @@ jobs:
         with: {distribution: 'temurin', java-version: '17'}
       - uses: subosito/flutter-action@v2
         with: {flutter-version: '3.27.3', channel: stable}
-      - name: Build FIX VERDE REAL
+      - name: Build
         run: |
           rm -rf android ios lib
-          flutter create . --platforms=android --project-name rincon_futbolero
+          flutter create. --platforms=android --project-name rincon_futbolero
           sed -i "s/8.1.0/8.3.0/g" android/settings.gradle
           sed -i "s/gradle-.*-all.zip/gradle-8.4-all.zip/g" android/gradle/wrapper/gradle-wrapper.properties
           pip install pillow -q
           python3 << 'PY'
           from PIL import Image
-          import os
           im=Image.open('logo.png').convert('RGBA')
           bg=Image.new('RGBA',(1024,1024),(10,92,54,255))
           w,h=im.size; s=min(900/w,900/h)
           im2=im.resize((int(w*s),int(h*s)), Image.LANCZOS)
           bg.paste(im2,((1024-im2.width)//2,(1024-im2.height)//2),im2)
           for size,folder in [(48,'mipmap-mdpi'),(72,'mipmap-hdpi'),(96,'mipmap-xhdpi'),(144,'mipmap-xxhdpi'),(192,'mipmap-xxxhdpi')]:
-            p=f'android/app/src/main/res/{folder}'; os.makedirs(p,exist_ok=True)
+            p=f'android/app/src/main/res/{folder}'
+            __import__('os').makedirs(p,exist_ok=True)
             bg.resize((size,size), Image.LANCZOS).save(f'{p}/ic_launcher.png','PNG')
           PY
           mkdir -p assets
           cp Rifut.html assets/
-          cp logo.png assets/
+          cp logo.png assets/logo.png
+          cp logo.png assets/rincon_logo.png
           cat > pubspec.yaml <<'EOF'
           name: rincon_futbolero
-          description: Rincon Futbolero PRO
-          version: 9.0.0+1
           environment: {sdk: '>=3.2.0 <4.0.0'}
-          dependencies:
-            flutter: {sdk: flutter}
-            flutter_inappwebview: ^6.1.5
-          flutter: {uses-material-design: true, assets: [assets/Rifut.html, assets/logo.png]}
+          dependencies: {flutter: {sdk: flutter}, flutter_inappwebview: ^6.1.5}
+          flutter: {uses-material-design: true, assets: [assets/Rifut.html, assets/logo.png, assets/rincon_logo.png]}
           EOF
           cat > lib/main.dart <<'EOF'
           import 'package:flutter/material.dart';
           import 'package:flutter/services.dart';
           import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-          void main() async { WidgetsFlutterBinding.ensureInitialized(); runApp(const MyApp()); }
-          class MyApp extends StatelessWidget{const MyApp({super.key}); @override Widget build(BuildContext c)=>const MaterialApp(debugShowCheckedModeBanner:false, home:ProApp());}
-          class ProApp extends StatefulWidget{const ProApp({super.key}); @override State<ProApp> createState()=>_ProAppState();}
-          class _ProAppState extends State<ProApp>{
-            String? htmlData;
-            @override void initState(){super.initState(); rootBundle.loadString('assets/Rifut.html').then((v){ setState(()=> htmlData=v); });}
-            @override Widget build(BuildContext context){
-              if(htmlData==null) return const Scaffold(backgroundColor: Color(0xFF0A5C36), body: Center(child: CircularProgressIndicator(color: Colors.white)));
+          void main() async { WidgetsFlutterBinding.ensureInitialized(); runApp(const MaterialApp(debugShowCheckedModeBanner:false, home:App())); }
+          class App extends StatefulWidget{const App({super.key}); @override State<App> createState()=>_S();}
+          class _S extends State<App>{
+            String? html;
+            @override void initState(){ super.initState(); rootBundle.loadString('assets/Rifut.html').then((v)=>setState(()=>html=v)); }
+            @override Widget build(BuildContext c){
+              if(html==null) return const Scaffold(backgroundColor:Color(0xFF0A5C36), body:Center(child:CircularProgressIndicator(color:Colors.white)));
               return Scaffold(
-                backgroundColor: const Color(0xFF0A5C36),
-                appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white),
+                backgroundColor:const Color(0xFF0A5C36),
                 body: InAppWebView(
-                  initialData: InAppWebViewInitialData(data: htmlData!, baseUrl: WebUri("https://localhost/"), mimeType: "text/html", encoding: "utf-8"),
-                  initialSettings: InAppWebViewSettings(javaScriptEnabled: true, domStorageEnabled: true, allowFileAccess: true, javaScriptCanOpenWindowsAutomatically: true, useHybridComposition: true),
+                  initialData: InAppWebViewInitialData(data: html!, baseUrl: WebUri("https://localhost/"), mimeType: "text/html", encoding: "utf-8"),
+                  initialSettings: InAppWebViewSettings(javaScriptEnabled:true, domStorageEnabled:true, allowFileAccess:true, allowFileAccessFromFileURLs:true, allowUniversalAccessFromFileURLs:true),
                 ),
               );
             }
@@ -69,6 +62,4 @@ jobs:
       - run: flutter pub get
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
-        with:
-          name: APK-FIX-VERDE-REAL
-          path: build/app/outputs/flutter-apk/app-release.apk
+        with: {name: APK-RINCON-OK, path: build/app/outputs/flutter-apk/app-release.apk}
