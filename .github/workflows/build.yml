@@ -10,7 +10,7 @@ jobs:
       - uses: actions/setup-java@v4
         with: {distribution: 'temurin', java-version: '17'}
       - uses: subosito/flutter-action@v2
-        with: {flutter-version: '3.24.0', channel: stable}
+        with: {flutter-version: '3.27.3', channel: stable}
       - name: Build APK FINAL
         run: |
           rm -rf android ios lib
@@ -23,11 +23,11 @@ jobs:
           cat > pubspec.yaml <<'EOF'
           name: rincon_futbolero
           description: Rincon Futbolero PRO
-          version: 3.0.1+1
-          environment: {sdk: '>=3.0.0 <4.0.0'}
+          version: 3.0.2+1
+          environment: {sdk: '>=3.2.0 <4.0.0'}
           dependencies:
             flutter: {sdk: flutter}
-            webview_flutter: ^4.13.0
+            webview_flutter: ^4.10.0
             file_picker: ^8.1.2
           flutter: {uses-material-design: true, assets: [assets/]}
           EOF
@@ -61,10 +61,7 @@ jobs:
                 ..loadHtmlString(html, baseUrl: 'https://localhost/');
               setState(()=>loading=false);
             }
-            @override Widget build(BuildContext b)=>Scaffold(
-              backgroundColor: const Color(0xFF0A5C36),
-              appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white),
-              body: loading ? const Center(child: CircularProgressIndicator(color: Colors.white)) : WebViewWidget(controller: ctrl));
+            @override Widget build(BuildContext b)=>Scaffold(backgroundColor: const Color(0xFF0A5C36), appBar: AppBar(title: const Text('RINCON FUTBOLERO PRO'), backgroundColor: const Color(0xFF0A5C36), foregroundColor: Colors.white), body: loading ? const Center(child: CircularProgressIndicator(color: Colors.white)) : WebViewWidget(controller: ctrl));
           }
           EOF
       - run: flutter pub get
