@@ -9,7 +9,7 @@ jobs:
         with: {distribution: 'temurin', java-version: '17'}
       - uses: subosito/flutter-action@v2
         with: {flutter-version: '3.27.3', channel: stable}
-      - name: Build
+      - name: Crear proyecto
         run: |
           rm -rf android ios lib
           flutter create . --platforms=android --project-name rincon_futbolero
@@ -23,31 +23,128 @@ jobs:
           w,h=im.size; s=min(900/w,900/h)
           im2=im.resize((int(w*s),int(h*s)), Image.LANCZOS)
           bg.paste(im2,((1024-im2.width)//2,(1024-im2.height)//2),im2)
+          import os
           for size,folder in [(48,'mipmap-mdpi'),(72,'mipmap-hdpi'),(96,'mipmap-xhdpi'),(144,'mipmap-xxhdpi'),(192,'mipmap-xxxhdpi')]:
             p=f'android/app/src/main/res/{folder}'
-            __import__('os').makedirs(p,exist_ok=True)
+            os.makedirs(p,exist_ok=True)
             bg.resize((size,size), Image.LANCZOS).save(f'{p}/ic_launcher.png','PNG')
           PY
+      - name: Crear archivos
+        run: |
           mkdir -p assets
           cp logo.png assets/logo.png
           cp logo.png assets/rincon_logo.png
           cat > assets/Rifut.html <<'HTML'
-          <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#080d08;color:white;font-family:Arial;padding:16px}header{background:#111;border-bottom:3px solid #ff6b2b;padding:14px;display:flex;gap:12px;align-items:center}header img{width:56px;height:56px;border-radius:50%;background:white}.card{background:#121a12;border-radius:18px;padding:14px;margin:12px 0;border:1px solid #1e331e}input,select{width:100%;padding:12px;border-radius:12px;border:1px solid #2a4a2a;background:#0a120a;color:white;margin:6px 0}button{width:100%;padding:14px;border-radius:12px;border:none;font-weight:900;margin-top:8px;background:linear-gradient(135deg,#ff6b2b,#ff8a4a)}table{width:100%;border-collapse:collapse}th{color:#ff6b2b}td,th{padding:8px;border-bottom:1px solid #222;text-align:center}.gol{width:52px;color:#ff6b2b;font-weight:900;border-color:#ff6b2b}</style></head><body>
-          <header><img src="logo.png"><b style="color:#ff6b2b">RINCON FUTBOLERO - YA FUNCIONA</b></header>
-          <div class="card"><h3 style="color:#ff6b2b">ESTE ES EL APK BUENO</h3><p>Si ves esto, el verde se fue. Ahora vamos a cargar el HTML completo en el siguiente paso.</p><p>Equipos: <span id="c">0</span></p><input id="n" placeholder="Equipo"><button onclick="add()">Agregar</button><div id="l"></div></div>
-          <script>let e=JSON.parse(localStorage.getItem('eq')||'[]');function r(){document.getElementById('c').innerText=e.length;document.getElementById('l').innerHTML=e.join('<br>')}function add(){let v=document.getElementById('n').value.trim().toUpperCase();if(!v)return;e.push(v);localStorage.setItem('eq',JSON.stringify(e));document.getElementById('n').value='';r()}r()</script></body></html>
+          <!DOCTYPE html>
+          <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+          <style>
+          body{margin:0;background:#0a120a;color:white;font-family:Arial;padding:0 0 90px 0}
+          header{background:#0f1a0f;border-bottom:3px solid #ff6b2b;padding:14px;display:flex;gap:12px;align-items:center;position:sticky;top:0}
+          header img{width:58px;height:58px;border-radius:50%;background:white;border:2px solid #0a5c2e;object-fit:cover}
+         .card{margin:12px;background:#121a12;border-radius:18px;padding:14px;border:1px solid #1e331e}
+          input,select{width:100%;padding:13px;border-radius:12px;border:1.5px solid #2a4a2a;background:#0a120a;color:white;margin:6px 0;font-size:15px}
+         .btn{width:100%;padding:14px;border-radius:14px;border:none;font-weight:900;margin-top:10px;background:linear-gradient(135deg,#ff6b2b,#ff8a4a);color:#111}
+         .btn2{width:100%;padding:12px;border-radius:14px;background:transparent;color:#0e7a3e;border:2px solid #0e7a3e;margin-top:8px;font-weight:800}
+          table{width:100%;border-collapse:collapse}th{color:#ff6b2b;padding:8px;font-size:12px}td{padding:8px;border-bottom:1px solid #222;text-align:center;font-size:13px}
+         .gol{width:54px;text-align:center;color:#ff6b2b;font-weight:900;border-color:#ff6b2b;background:#1a120a;font-size:17px}
+         .row{display:flex;justify-content:space-between;align-items:center;background:#1a261a;border:1px solid #0a5c2e;padding:10px 12px;border-radius:14px;margin:6px 0}
+         .logo{width:34px;height:34px;border-radius:50%;background:white;border:2px solid #0a5c2e;object-fit:cover}
+         .j{margin:14px 0 6px;background:linear-gradient(90deg,#ff6b2b,#ff8a4a);color:#111;padding:7px 12px;border-radius:8px;font-weight:900;font-size:12px}
+          </style></head><body>
+          <header><img src="logo.png"><div><b style="color:#ff6b2b">RINCON FUTBOLERO</b><br><small>LIGA CHINANTLA</small></div></header>
+          <div class="card">
+          <h3 style="color:#ff6b2b;margin:0 0 8px">⚽ EQUIPOS (16 max)</h3>
+          <input id="nn" placeholder="Nombre equipo">
+          <button class="btn" onclick="addEq()">+ AGREGAR</button>
+          <div id="le" style="margin-top:10px"></div>
+          <hr style="border-color:#1e331e;margin:14px 0">
+          <h3 style="color:#ff6b2b">📅 FIXTURE</h3>
+          <select id="sj"></select><input id="fe" type="date"><select id="lo"></select><select id="vi"></select>
+          <button class="btn2" onclick="addF()">+ PARTIDO</button><div id="lf" style="margin-top:10px"></div>
+          <button class="btn" onclick="guardar()">💾 GUARDAR Y JUGAR</button>
+          </div>
+          <div id="app" style="display:none">
+          <div class="card"><div id="rol"></div><button class="btn" onclick="calc()">🧮 CALCULAR TABLA</button><button class="btn2" onclick="location.reload()">✏️ EDITAR</button></div>
+          <div class="card"><h3 style="color:#ff6b2b">📊 TABLA</h3><table id="tg"></table></div>
+          </div>
+          <script>
+          let $=i=>document.getElementById(i); let eq=JSON.parse(localStorage.getItem('eq')||'[]'); let fx=JSON.parse(localStorage.getItem('fx')||'[]'); let rs=JSON.parse(localStorage.getItem('rs')||'{}');
+          function ref(){let o=eq.map(v=>`<option>${v}</option>`).join('');$('lo').innerHTML=o;$('vi').innerHTML=o;let s='';for(let i=1;i<=30;i++)s+=`<option value="${i}">Jornada ${i}</option>`;$('sj').innerHTML=s;$('le').innerHTML=eq.map((n,i)=>`<div class="row"><b>${n}</b><button onclick="eq.splice(${i},1);saveEq();ref()" style="width:auto;padding:6px 12px;background:#2a1111;color:#ff6b6b;border:1px solid #3a1a1a;border-radius:8px">X</button></div>`).join('')||'<small style="color:#666">Sin equipos</small>';renderF()}
+          function saveEq(){localStorage.setItem('eq',JSON.stringify(eq))}
+          function addEq(){let v=$('nn').value.trim().toUpperCase();if(!v)return;if(eq.includes(v)){alert('Ya existe');return}if(eq.length>=16){alert('Max 16');return}eq.push(v);saveEq();$('nn').value='';ref()}
+          function addF(){let j=parseInt($('sj').value);let l=$('lo').value;let v=$('vi').value;let f=$('fe').value||new Date().toISOString().split('T')[0];if(l==v){alert('Diferentes');return}fx.push({j,l,v,f});localStorage.setItem('fx',JSON.stringify(fx));renderF()}
+          function renderF(){$('lf').innerHTML=fx.map((x,i)=>`<div class="row"><span>J${x.j} ${x.l} vs ${x.v}</span><button onclick="fx.splice(${i},1);localStorage.setItem('fx',JSON.stringify(fx));renderF()" style="width:auto;padding:4px 10px;background:#2a1111;color:#ff6b6b;border-radius:8px">X</button></div>`).join('')}
+          function guardar(){if(fx.length==0){alert('Agrega partidos');return}document.querySelector('.card').style.display='none';$('app').style.display='block';renderRol()}
+          function renderRol(){let html='';let js=[...new Set(fx.map(x=>x.j))].sort((a,b)=>a-b);js.forEach(j=>{html+=`<div class="j">JORNADA ${j}</div><table><tr><th>LOCAL</th><th>GL</th><th>GV</th><th>VISITA</th></tr>`;fx.filter(x=>x.j==j).forEach(f=>{let i=fx.indexOf(f);let r=rs[i]||{gl:'',gv:''};html+=`<tr><td style="text-align:left">${f.l}</td><td><input class="gol" id="gl${i}" value="${r.gl}" type="number" onchange="sv(${i})"></td><td><input class="gol" id="gv${i}" value="${r.gv}" type="number" onchange="sv(${i})"></td><td style="text-align:left">${f.v}</td></tr>`});html+='</table>'});$('rol').innerHTML=html}
+          function sv(i){rs[i]={gl:$('gl'+i).value,gv:$('gv'+i).value};localStorage.setItem('rs',JSON.stringify(rs))}
+          function calc(){let t={};eq.forEach(n=>t[n]={JJ:0,JG:0,JE:0,JP:0,GF:0,GC:0,PTS:0});fx.forEach((f,i)=>{let r=rs[i];if(!r||r.gl===''||r.gv==='')return;let gl=parseInt(r.gl)||0,gv=parseInt(r.gv)||0;t[f.l].JJ++;t[f.v].JJ++;t[f.l].GF+=gl;t[f.l].GC+=gv;t[f.v].GF+=gv;t[f.v].GC+=gl;if(gl>gv){t[f.l].JG++;t[f.v].JP++;t[f.l].PTS+=3}else if(gv>gl){t[f.v].JG++;t[f.l].JP++;t[f.v].PTS+=3}else{t[f.l].JE++;t[f.v].JE++;t[f.l].PTS++;t[f.v].PTS++}});let arr=Object.entries(t).map(([k,v])=>({eq:k,...v,D:v.GF-v.GC})).sort((a,b)=>b.PTS-a.PTS||b.D-a.D);let h='<tr><th>#</th><th style="text-align:left">EQ</th><th>JJ</th><th>JG</th><th>JE</th><th>JP</th><th>GF</th><th>GC</th><th>PTS</th></tr>';arr.forEach((x,i)=>{h+=`<tr><td>${i+1}</td><td style="text-align:left"><b>${x.eq}</b></td><td>${x.JJ}</td><td>${x.JG}</td><td>${x.JE}</td><td>${x.JP}</td><td>${x.GF}</td><td>${x.GC}</td><td><b style="color:#ff6b2b">${x.PTS}</b></td></tr>`});$('tg').innerHTML=h}
+          ref();
+          </script></body></html>
           HTML
           cat > pubspec.yaml <<'EOF'
           name: rincon_futbolero
-          environment: {sdk: '>=3.2.0 <4.0.0'}
-          dependencies: {flutter: {sdk: flutter}, flutter_inappwebview: ^6.1.5}
-          flutter: {uses-material-design: true, assets: [assets/Rifut.html, assets/logo.png, assets/rincon_logo.png]}
+          environment:
+            sdk: '>=3.2.0 <4.0.0'
+          dependencies:
+            flutter:
+              sdk: flutter
+            flutter_inappwebview: ^6.1.5
+          flutter:
+            uses-material-design: true
+            assets:
+              - assets/Rifut.html
+              - assets/logo.png
+              - assets/rincon_logo.png
           EOF
           cat > lib/main.dart <<'EOF'
-          import 'package:flutter/material.dart';import 'package:flutter/services.dart';import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-          void main() async {WidgetsFlutterBinding.ensureInitialized();runApp(const MaterialApp(debugShowCheckedModeBanner:false,home:App()));}
-          class App extends StatefulWidget{const App({super.key});@override State<App> createState()=>_S();}
-          class _S extends State<App>{String? h;@override void initState(){super.initState();rootBundle.loadString('assets/Rifut.html').then((v)=>setState(()=>h=v));}@override Widget build(BuildContext c){if(h==null)return const Scaffold(backgroundColor:Color(0xFF080D08),body:Center(child:CircularProgressIndicator()));return Scaffold(backgroundColor:Color(0xFF080D08),body:SafeArea(child:InAppWebView(initialData:InAppWebViewInitialData(data:h!,baseUrl:WebUri("https://localhost/"),mimeType:"text/html",encoding:"utf-8"),initialSettings:InAppWebViewSettings(javaScriptEnabled:true,domStorageEnabled:true,allowFileAccess:true,allowFileAccessFromFileURLs:true,allowUniversalAccessFromFileURLs:true))));}}
+          import 'package:flutter/material.dart';
+          import 'package:flutter/services.dart';
+          import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+          void main() async {
+            WidgetsFlutterBinding.ensureInitialized();
+            runApp(const MaterialApp(debugShowCheckedModeBanner: false, home: App()));
+          }
+          class App extends StatefulWidget {
+            const App({super.key});
+            @override
+            State<App> createState() => _S();
+          }
+          class _S extends State<App> {
+            String? html;
+            @override
+            void initState() {
+              super.initState();
+              rootBundle.loadString('assets/Rifut.html').then((v) => setState(() => html = v));
+            }
+            @override
+            Widget build(BuildContext context) {
+              if (html == null) {
+                return const Scaffold(
+                  backgroundColor: Color(0xFF080D08),
+                  body: Center(child: CircularProgressIndicator(color: Color(0xFFFF6B2B))),
+                );
+              }
+              return Scaffold(
+                backgroundColor: const Color(0xFF080D08),
+                body: SafeArea(
+                  child: InAppWebView(
+                    initialData: InAppWebViewInitialData(
+                      data: html!,
+                      baseUrl: WebUri('https://localhost/'),
+                      mimeType: 'text/html',
+                      encoding: 'utf-8',
+                    ),
+                    initialSettings: InAppWebViewSettings(
+                      javaScriptEnabled: true,
+                      domStorageEnabled: true,
+                      allowFileAccess: true,
+                      allowUniversalAccessFromFileURLs: true,
+                    ),
+                  ),
+                ),
+              );
+            }
+          }
           EOF
       - name: pub get
         run: flutter pub get
@@ -56,5 +153,5 @@ jobs:
       - name: subir apk
         uses: actions/upload-artifact@v4
         with:
-          name: APK-RINCON-FINAL
+          name: APK-RINCON-OK
           path: build/app/outputs/flutter-apk/app-release.apk
