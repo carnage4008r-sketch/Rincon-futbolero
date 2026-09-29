@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rincón Futbolero - Liga Veteranos Chinantla</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a5c2e">
+<style>
+:root{--green:#0a5c2e;--orange:#ff7a00;--bg:#080d08;--card:#121a12}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+body{background:var(--bg);color:#fff}
+header{background:linear-gradient(135deg,var(--green),#083d1e);padding:15px;display:flex;align-items:center;gap:12px;border-bottom:3px solid var(--orange)}
+header img{width:70px;height:70px;border-radius:50%;background:#fff;padding:3px}
+header h1{font-size:1.3rem;line-height:1.1}
+header h1 span{color:var(--orange)}
+.tabs{display:flex;background:var(--card);overflow-x:auto}
+.tabs button{flex:1;padding:12px 10px;border:none;background:transparent;color:#aaa;font-weight:bold;cursor:pointer;border-bottom:3px solid transparent}
+.tabs button.active{color:var(--orange);border-bottom-color:var(--orange);background:rgba(255,122,0,.1)}
+.section{display:none;padding:15px}
+.section.active{display:block}
+.card{background:var(--card);border-radius:12px;padding:15px;margin-bottom:12px;border:1px solid #222}
+table{width:100%;border-collapse:collapse}
+th{color:var(--orange);font-size:.8rem;text-align:left;padding:8px 4px;border-bottom:1px solid #333}
+td{padding:8px 4px;border-bottom:1px solid #1a1a1a;font-size:.9rem}
+.btn{background:var(--orange);color:#000;border:none;padding:10px 16px;border-radius:8px;font-weight:bold;cursor:pointer;width:100%;margin-top:10px}
+input,select{width:100%;padding:10px;border-radius:8px;border:1px solid #333;background:#0f1510;color:#fff;margin-top:6px}
+.logo-rf{filter:drop-shadow(0 0 8px rgba(255,122,0,.4))}
+</style>
+</head>
+<body>
+<header>
+  <img src="rincon_logo.png" class="logo-rf" alt="RF Logo">
+  <h1>RINCÓN<br><span>FUTBOLERO</span><br><small style="font-size:.7rem;color:#ccc">LIGA VETERANOS CHINANTLA</small></h1>
+</header>
+
+<div class="tabs">
+  <button class="active" onclick="tab('tabla')">Tabla</button>
+  <button onclick="tab('partidos')">Partidos</button>
+  <button onclick="tab('goles')">Goleo</button>
+  <button onclick="tab('admin')">Admin</button>
+</div>
+
+<div id="tabla" class="section active">
+  <div class="card">
+    <h3>Tabla General</h3>
+    <table id="tablaPos"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>PTS</th></tr></thead><tbody></tbody></table>
+  </div>
+</div>
+
+<div id="partidos" class="section">
+  <div class="card" id="listaPartidos">No hay partidos aún</div>
+</div>
+
+<div id="goles" class="section">
+  <div class="card">
+    <h3>Tabla de Goleo</h3>
+    <table id="tablaGoles"><thead><tr><th>Jugador</th><th>Equipo</th><th>Goles</th></tr></thead><tbody></tbody></table>
+  </div>
+</div>
+
+<div id="admin" class="section">
+  <div class="card">
+    <h3>Agregar Equipo</h3>
+    <input id="nuevoEquipo" placeholder="Nombre del equipo">
+    <button class="btn" onclick="addEquipo()">Agregar Equipo</button>
+  </div>
+  <div class="card">
+    <h3>Registrar Partido</h3>
+    <select id="local"></select>
+    <input id="gLocal" type="number" placeholder="Goles local">
+    <select id="visita" style="margin-top:10px"></select>
+    <input id="gVisita" type="number" placeholder="Goles visita">
+    <button class="btn" onclick="addPartido()">Guardar Partido</button>
+  </div>
+</div>
+
+<script>
+let equipos = JSON.parse(localStorage.getItem('rf_equipos')||'[]');
+let partidos = JSON.parse(localStorage.getItem('rf_partidos')||'[]');
+let goleadores = JSON.parse(localStorage.getItem('rf_goles')||'[]');
+
+function save(){localStorage.setItem('rf_equipos',JSON.stringify(equipos));localStorage.setItem('rf_partidos',JSON.stringify(partidos));localStorage.setItem('rf_goles',JSON.stringify(goleadores));render();}
+
+function tab(id){
+ document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+ document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ event.target.classList.add('active');
+}
+
+function addEquipo(){
+ let n=document.getElementById('nuevoEquipo').value.trim(); if(!n) return;
+ equipos.push({nombre:n,pj:0,pts:0,gf:0,gc:0}); document.getElementById('nuevoEquipo').value=''; save();
+}
+
+function addPartido(){
+ let l=document.getElementById('local').value, v=document.getElementById('visita').value;
+ let gl=parseInt(document.getElementById('gLocal').value||0), gv=parseInt(document.getElementById('gVisita').value||0);
+ if(!l||!v||l===v) return alert('Elige equipos diferentes');
+ partidos.push({local:l,visita:v,gl,gv});
+ equipos.forEach(e=>{
+   if(e.nombre===l||e.nombre===v){e.pj++; e.gf+= e.nombre===l?gl:gv; e.gc+= e.nombre===l?gv:gl;
+   if(gl===gv) e.pts+=1; else if((e.nombre===l&&gl>gv)||(e.nombre===v&&gv>gl)) e.pts+=3;}
+ });
+ save();
+}
+
+function render(){
+ let tbody=document.querySelector('#tablaPos tbody'); tbody.innerHTML='';
+ equipos.sort((a,b)=>b.pts-a.pts).forEach((e,i)=>{
+   tbody.innerHTML+=`<tr><td>${i+1}</td><td>${e.nombre}</td><td>${e.pj}</td><td style="color:#ff7a00;font-weight:bold">${e.pts}</td></tr>`;
+ });
+ let selL=document.getElementById('local'), selV=document.getElementById('visita');
+ selL.innerHTML=selV.innerHTML=''; equipos.forEach(e=>{selL.innerHTML+=`<option>${e.nombre}</option>`; selV.innerHTML+=`<option>${e.nombre}</option>`;});
+ let lp=document.getElementById('listaPartidos');
+ lp.innerHTML= partidos.length? partidos.map(p=>`<div style="padding:8px;border-bottom:1px solid #222">${p.local} ${p.gl} - ${p.gv} ${p.visita}</div>`).join('') : 'No hay partidos';
+}
+render();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
