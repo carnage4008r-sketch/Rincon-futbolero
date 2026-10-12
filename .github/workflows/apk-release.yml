@@ -1,64 +1,93 @@
-# Compila la APK firmada de Rincón Futbolero cada vez que cambias algo en el repositorio.
-# También se puede lanzar a mano: pestaña Actions > "APK Rincón Futbolero" > Run workflow.
+# Compila la APK de Rincón Futbolero. No necesita package.json: arma el proyecto Capacitor desde cero.
+# Usa: www/index.html (o index.html en la raíz), assets/ (icono y pantalla de carga) y scripts/personalizar-android.mjs
 name: APK Rincón Futbolero
-
+ 
 on:
   push:
     branches: [main, master]
   workflow_dispatch:
-
+ 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+ 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
+ 
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-
-      - name: Instalar dependencias
+ 
+      - name: Crear el proyecto Capacitor
         run: |
-          npm install
-          npm install --no-save @capacitor/assets
-
-      - name: Crear la parte Android si no existe
-        run: |
-          if [ ! -d android ]; then npx cap add android; fi
-
+          mkdir -p app/www
+          if [ -f www/index.html ]; then SRC=www/index.html; elif [ -f index.html ]; then SRC=index.html; else echo "No encontré index.html"; exit 1; fi
+          echo "Usando $SRC"
+          cp "$SRC" app/www/index.html
+          if [ -d assets ]; then cp -r assets app/assets; fi
+          cat > app/capacitor.config.json <<'JSON'
+          {
+            "appId": "com.rincon.futbolero",
+            "appName": "Rincón Futbolero",
+            "webDir": "www",
+            "backgroundColor": "#050a07"
+          }
+          JSON
+          cd app
+          npm init -y
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @capacitor/filesystem@6 @capacitor/share@6
+          npm install --save-dev @capacitor/assets
+ 
+      - name: Agregar Android
+        working-directory: app
+        run: npx cap add android
+ 
       - name: Generar icono y pantalla de carga
-        run: npx capacitor-assets generate --android
-
+        working-directory: app
+        run: |
+          if [ -d assets ]; then npx capacitor-assets generate --android; else echo "Sin carpeta assets: se usa el icono por defecto"; fi
+ 
       - name: Copiar la página a la app
+        working-directory: app
         run: npx cap sync android
-
+ 
       - name: Ajustes nativos (colores de barras y firma)
-        run: node scripts/personalizar-android.mjs
-
+        run: |
+          if [ -f scripts/personalizar-android.mjs ]; then node scripts/personalizar-android.mjs app/android; else echo "Sin script de ajustes"; fi
+ 
       - name: Preparar la llave de firma
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/rincon.jks"
-          echo "KEYSTORE_FILE=$RUNNER_TEMP/rincon.jks" >> "$GITHUB_ENV"
-
-      - name: Compilar APK firmada
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/rincon.jks"
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/rincon.jks" >> "$GITHUB_ENV"
+            echo "TIPO=release" >> "$GITHUB_ENV"
+          else
+            echo "No hay llave en Secrets: se compila la versión de prueba (debug)."
+            echo "TIPO=debug" >> "$GITHUB_ENV"
+          fi
+ 
+      - name: Compilar APK
+        working-directory: app/android
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          cd android
           chmod +x gradlew
-          ./gradlew assembleRelease
-
+          if [ "$TIPO" = "release" ]; then ./gradlew assembleRelease; else ./gradlew assembleDebug; fi
+ 
       - name: Subir la APK
         uses: actions/upload-artifact@v4
+        with:
+          name: RinconFutbolero-APK
+          path: app/android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
         with:
           name: RinconFutbolero-APK
           path: android/app/build/outputs/apk/release/app-release.apk
