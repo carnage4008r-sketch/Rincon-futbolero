@@ -1,0 +1,64 @@
+# Compila la APK firmada de Rincón Futbolero cada vez que cambias algo en el repositorio.
+# También se puede lanzar a mano: pestaña Actions > "APK Rincón Futbolero" > Run workflow.
+name: APK Rincón Futbolero
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Instalar dependencias
+        run: |
+          npm install
+          npm install --no-save @capacitor/assets
+
+      - name: Crear la parte Android si no existe
+        run: |
+          if [ ! -d android ]; then npx cap add android; fi
+
+      - name: Generar icono y pantalla de carga
+        run: npx capacitor-assets generate --android
+
+      - name: Copiar la página a la app
+        run: npx cap sync android
+
+      - name: Ajustes nativos (colores de barras y firma)
+        run: node scripts/personalizar-android.mjs
+
+      - name: Preparar la llave de firma
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/rincon.jks"
+          echo "KEYSTORE_FILE=$RUNNER_TEMP/rincon.jks" >> "$GITHUB_ENV"
+
+      - name: Compilar APK firmada
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Subir la APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RinconFutbolero-APK
+          path: android/app/build/outputs/apk/release/app-release.apk
